@@ -1,24 +1,34 @@
 import { createActor } from 'xstate';
 import machine from './machine.js';
 
-const actor = createActor(machine, {
-  input: { moduleId: 1 }
+const config = await import("../config.json", {
+  with: { type: "json" },
 });
 
-actor.subscribe((snapshot) => {
-  console.log(snapshot.context);
+const actor = createActor(machine, {
+  // input: { moduleId: 1 }
+});
+
+const subscription = actor.subscribe({
+  next(snapshot) {
+    console.log(snapshot);
+  },
+  error(err) {
+    actor.send({ type: 'ERROR' });
+  },
+  complete() {
+    console.log('COMPLETE!', snapshot)
+  },
 });
 
 actor.start();
 
-actor.send({ type: 'INIT'});
+actor.send({ type: 'INIT', data: config });
 
-actor.send({ type: 'NAVIGATE', data: { moduleId: 2, stepId: 0 } });
+actor.send({ type: 'SAVE_FORM', data: { test1: true, test2: false } });
+actor.send({ type: 'NEXT' });
 
-actor.send({ type: 'SAVE_OUTPUT', data: { test1: true, test2: false } });
+actor.send({ type: 'SAVE_FORM', data: { blahblah: "BLAHBLAH" } });
+actor.send({ type: 'NEXT' });
 
-actor.send({ type: 'NAVIGATE', data: { moduleId: 3, stepId: 1 } });
-
-actor.send({ type: 'SAVE_OUTPUT', data: { blahblah: "BLAHBLAH" } });
-
-actor.send({ type: 'COMPLETE'});
+actor.send({ type: 'COMPLETE' });
