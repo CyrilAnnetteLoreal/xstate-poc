@@ -13,12 +13,12 @@ const actor = createActor(machine, {
 });
 
 actor.subscribe({
-  // next(snapshot) {
-  //   if (snapshot.context.debug) {
-  //     console.log(snapshot.context);
-  //     console.log('-----------------------------');
-  //   }
-  // },
+  next(snapshot) {
+    if (snapshot.context.debug) {
+      console.log(snapshot.context);
+      console.log('############################## \n');
+    }
+  },
   error(err) {
     console.error(err);
     actor.send({ type: 'ERROR' });

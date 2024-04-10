@@ -60,6 +60,7 @@ export default setup({
     readConfig: ({ context, event }) => {
       const { data = {} } = event;
       context.config = data; // inject config into the context
+      debug(({ context, event }), '- Configuration loaded');
 
       const firstModuleId = Object.keys(context.config?.modules)?.[0];
       const firstStepId = Object.keys(context.config.modules[firstModuleId].steps)[0];
@@ -110,7 +111,7 @@ export default setup({
     appendCurrentOutput: ({ context, event }) => {
       const { data } = event;
       context.output.current = { ...context.output.current, ...data }
-      debug({context}, `- Storing ${JSON.stringify(data)} into output`);
+      debug({ context }, `- Storing ${JSON.stringify(data)} into output`);
     },
     readLastInput: ({ context }) => {
       context.input.current = context.output.history.slice(-1)[0];
@@ -202,6 +203,12 @@ export default setup({
           }
         },
       },
-      complete: {}
+      complete: {
+        entry: [
+          ({ context, event }) => {
+            debug(({ context, event }), '- Experience completed');
+          }
+        ]
+      }
     },
   });
