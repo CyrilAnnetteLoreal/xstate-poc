@@ -1,9 +1,9 @@
-import { createActor, fromTransition } from 'xstate';
+import fs from 'fs';
+import { createActor } from 'xstate';
+
 import machine from './machine.js';
 
-const { default: config } = await import("../config.json", {
-  with: { type: "json" },
-});
+const config = JSON.parse(fs.readFileSync('../config.json'));
 
 const actor = createActor(machine, {
   input: { debug: true }
