@@ -1,24 +1,25 @@
-import { createActor } from 'xstate';
+import { createActor, fromTransition } from 'xstate';
 import machine from './machine.js';
 
-const config = await import("../config.json", {
+const { default: config } = await import("../config.json", {
   with: { type: "json" },
 });
 
 const actor = createActor(machine, {
-  // input: { moduleId: 1 }
+  input: { debug: true }
 });
 
-const subscription = actor.subscribe({
-  next(snapshot) {
-    console.log(snapshot);
-  },
+actor.subscribe({
+  // next(snapshot) {
+  //   if (snapshot.context.debug) {
+  //     console.log(snapshot.context);
+  //     console.log('-----------------------------');
+  //   }
+  // },
   error(err) {
+    console.error(err);
     actor.send({ type: 'ERROR' });
-  },
-  complete() {
-    console.log('COMPLETE!', snapshot)
-  },
+  }
 });
 
 actor.start();

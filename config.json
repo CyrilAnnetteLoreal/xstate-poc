@@ -68,8 +68,16 @@
       "steps": {
         "0": {
           "navigation": {
-            "next": null,
-            "previous": null
+            "next": {
+              "route": {
+                "module": 3
+              }
+            },
+            "previous": {
+              "route": {
+                "module": 2
+              }
+            }
           },
           "events": {
             "onLoad": {
@@ -84,16 +92,19 @@
     },
     "3": {
       "events": {
-        "restart": {
+        "onRestart": {
           "route": {
             "module": 1
           }
         },
-        "error": {
+        "onError": {
           "route": {
             "module": 1
           }
         }
+      },
+      "steps": {
+        "0": {}
       }
     }
   }

@@ -1,7 +1,12 @@
 import { setup } from 'xstate';
 
+const debug = ({ context }, params) => {
+  if (!context.debug) return;
+  console.log(params);
+}
+
 const navigate = ({ context, event }, params) => {
-  let { moduleId, stepId } = event.data ?? {};
+  let { moduleId, stepId } = event?.data ?? {};
   if (params) {
     moduleId = params.moduleId;
     stepId = params.stepId;
@@ -12,8 +17,10 @@ const navigate = ({ context, event }, params) => {
     moduleId = context.routes.current.moduleId;
   }
   else if (!stepId && moduleId) {
-    stepId = context.routes.current.stepId;
+    stepId = Object.keys(context.config.modules[moduleId]?.steps)?.[0]; // first module step
   }
+
+  debug({ context }, `- Navigating to route ${moduleId}::${stepId}`);
 
   /* Previous destination */
   context.routes.previous = {
@@ -25,24 +32,24 @@ const navigate = ({ context, event }, params) => {
   context.routes.current.module = context.config.modules[context.routes.current.moduleId];
 
   if (stepId) context.routes.current.stepId = stepId;
-  context.routes.current.step = context.currentModule.steps[context.routes.current.stepId];
+  context.routes.current.step = context.routes.current.module.steps[context.routes.current.stepId];
 
   /* Next destination */
   context.routes.next = {
-    moduleId: context.routes.current.step.navigation.next.route.module,
-    stepId: context.routes.current.step.navigation.next.route.step,
+    moduleId: context.routes.current.step?.navigation?.next?.route?.module,
+    stepId: context.routes.current.step?.navigation?.next?.route?.step,
   };
 
   /* onRestart destination */
   context.routes.restart = {
-    moduleId: context.routes.current.module.events.onRestart.route.module,
-    stepId: context.routes.current.module.events.onRestart.route?.step,
+    moduleId: context.routes.current.module?.events?.onRestart?.route?.module,
+    stepId: context.routes.current.module?.events?.onRestart?.route?.step,
   };
 
   /* onError destination */
   context.routes.error = {
-    moduleId: context.routes.current.module.events.onError.route.module,
-    stepId: context.routes.current.module.events.onError.route?.step,
+    moduleId: context.routes.current.module?.events?.onError?.route?.module,
+    stepId: context.routes.current.module?.events?.onError?.route?.step,
   };
 }
 
@@ -103,6 +110,7 @@ export default setup({
     appendCurrentOutput: ({ context, event }) => {
       const { data } = event;
       context.output.current = { ...context.output.current, ...data }
+      debug({context}, `- Storing ${JSON.stringify(data)} into output`);
     },
     readLastInput: ({ context }) => {
       context.input.current = context.output.history.slice(-1)[0];
@@ -112,8 +120,9 @@ export default setup({
   .createMachine({
     id: 'flow',
     context: ({ input }) => {
-      // const { moduleId, stepId = 0 } = input;
+      const { debug = false } = input;
       return {
+        debug,
         config: {},
         routes: {
           current: {
