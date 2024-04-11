@@ -1,12 +1,7 @@
-import fs from 'fs';
-import { fileURLToPath } from 'url'
-import { dirname, resolve } from 'path';
 import { createActor } from 'xstate';
 
 import machine from './machine.js';
-
-const modulePath = dirname(fileURLToPath(import.meta.url));
-const config = JSON.parse(fs.readFileSync(resolve(modulePath, "../config.json")));
+import config from '../config.js';
 
 const actor = createActor(machine, {
   input: { debug: true }

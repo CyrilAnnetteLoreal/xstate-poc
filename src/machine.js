@@ -7,6 +7,7 @@ const debug = ({ context }, params) => {
 
 const navigate = ({ context, event }, params) => {
   let { moduleId, stepId } = event?.data ?? {};
+  /* params values override event values */
   if (params) {
     moduleId = params.moduleId;
     stepId = params.stepId;
@@ -17,22 +18,22 @@ const navigate = ({ context, event }, params) => {
     moduleId = context.routes.current.moduleId;
   }
   else if (!stepId && moduleId) {
-    stepId = Object.keys(context.config.modules[moduleId]?.steps)?.[0]; // first module step
+    stepId = context.config.modules.find(m => m.id === moduleId)?.steps?.[0]?.id; // first module step
   }
 
   debug({ context }, `- Navigating to route ${moduleId}::${stepId}`);
 
-  /* Previous destination */
-  context.routes.previous = {
-    moduleId: context.routes.current.moduleId,
-    stepId: context.routes.current.stepId,
-  };
-
   if (moduleId) context.routes.current.moduleId = moduleId;
-  context.routes.current.module = context.config.modules[context.routes.current.moduleId];
+  context.routes.current.module = context.config.modules.find(m => m.id === moduleId);
 
   if (stepId) context.routes.current.stepId = stepId;
-  context.routes.current.step = context.routes.current.module.steps[context.routes.current.stepId];
+  context.routes.current.step = context.routes.current.module.steps.find(s => s.id === stepId);
+
+  /* Previous destination */
+  context.routes.previous = {
+    moduleId: context.routes.current.step?.navigation?.previous?.route?.module,
+    stepId: context.routes.current.step?.navigation?.previous?.route?.step,
+  };
 
   /* Next destination */
   context.routes.next = {
@@ -41,16 +42,21 @@ const navigate = ({ context, event }, params) => {
   };
 
   /* onRestart destination */
-  context.routes.restart = {
-    moduleId: context.routes.current.module?.events?.onRestart?.route?.module,
-    stepId: context.routes.current.module?.events?.onRestart?.route?.step,
-  };
+  if (context.routes.current.module?.events?.onRestart) {
+    context.routes.restart = {
+      moduleId: context.routes.current.module?.events?.onRestart?.route?.module,
+      stepId: context.routes.current.module?.events?.onRestart?.route?.step,
+    };
+  }
 
   /* onError destination */
-  context.routes.error = {
-    moduleId: context.routes.current.module?.events?.onError?.route?.module,
-    stepId: context.routes.current.module?.events?.onError?.route?.step,
-  };
+  if (context.routes.current.module?.events?.onError) {
+    context.routes.error = {
+      moduleId: context.routes.current.module?.events?.onError?.route?.module,
+      stepId: context.routes.current.module?.events?.onError?.route?.step,
+    };
+  }
+
 }
 
 export default setup({
@@ -62,8 +68,8 @@ export default setup({
       context.config = data; // inject config into the context
       debug(({ context, event }), '- Configuration loaded');
 
-      const firstModuleId = Object.keys(context.config?.modules)?.[0];
-      const firstStepId = Object.keys(context.config.modules[firstModuleId].steps)[0];
+      const firstModuleId = context.config?.modules?.[0]?.id;
+      const firstStepId = context.config.modules?.[0].steps?.[0]?.id;
 
       navigate({ context }, {
         moduleId: firstModuleId,
@@ -106,7 +112,7 @@ export default setup({
       context.output.current = {};
     },
     clearOutputHistory: ({ context }) => {
-      context.output.chistory = [];
+      context.output.history = [];
     },
     appendCurrentOutput: ({ context, event }) => {
       const { data } = event;
